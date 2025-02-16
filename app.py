@@ -15,16 +15,13 @@ def index():
 @app.route("/process", methods=["POST"])
 def process():
     name = request.form["name"]
-    summary, profile_pic_url = make_coffee_with(name=name, socketio=socketio)
+    summary, profile_pic_url = make_coffee_with(name=name, socketio=socketio, isMock=True)
     return jsonify(
         {
             "summary_and_questions": summary.to_dict(),
             "picture_url": profile_pic_url,
         }
     )
-    
-# Required for Vercel
-app.debug = True
 
 if __name__ == "__main__":
     socketio.run(

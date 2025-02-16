@@ -10,13 +10,15 @@ from agents.linkedin_lookup import lookup
 from output_parser import summary_parser, Summary
 from third_parties.scrap_linkedin_profile import scrap_linkedin_profile
 
-def make_coffee_with(name, socketio) -> Tuple[Summary, str]:
+def make_coffee_with(name, socketio, isMock) -> Tuple[Summary, str]:
     load_dotenv()
 
     linkedin_url = lookup(name=name, socketio=socketio)
     print(linkedin_url)
 
-    linkedin_data = scrap_linkedin_profile(linkedin_profile_url=linkedin_url, mock=True)
+    linkedin_data = scrap_linkedin_profile(
+        linkedin_profile_url=linkedin_url, mock=isMock
+    )
 
     summary_template = """
     give the LinkedIn information {information} about a person from I want you to create:
