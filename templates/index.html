@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Coffee Maker</title>
+    <link rel="stylesheet" href="https://unpkg.com/mvp.css">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@chgibb/css-spinners@2.2.1/css/spinner/three-quarters.min.css">
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script> <!-- 修改: 添加 Socket.IO 客户端库 -->
+
+</head>
+
+<body>
+    <header>
+        <form id="name-form" style="margin: 0 auto">
+            <h1>LinkedIn Coffee Maker</h1>
+            <input type="text" name="name" placeholder="Enter name">
+            <button id="submit-button" type="submit" class="center" style="background-color: #10a27b; color: white; border: none; border-radius: 5px; font-weight: bold;">Get to know this person!</button>
+        </form>
+    </header>
+    <div id="llm-response-container" style="max-width: 800px; margin: 0 auto; padding: 20px; display: none">
+        <h2>AI Agent Reasoning & Action:</h2>
+        <p id="llm-response" style="text-align: left;"></p>
+    </div>
+    <div id="spinner" style="text-align: center; display: none">
+        <span class="three-quarters-loader"
+            style="width: 100px; height: 100px; border-radius: 50%; border-width: 12px;"></span>
+    </div>
+    <main id="result" style="display: none">
+        <div style="text-align: center">
+            <img id="profile-pic" src="" alt="Profile Picture"
+                style="width: 300px; max-width: 100%; height: auto; border-radius: 50%; margin-bottom: 20px;">
+        </div>
+        <div>
+            <h2>Summary</h2>
+            <p id="summary"></p>
+        </div>
+        <div>
+            <h2>Coffee Chat Questions</h2>
+            <div id="questions"></div>
+        </div>
+    </main>
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+
+        .llm-message {
+            margin: 5px 0;
+        }
+    </style>
+
+    <script>
+        const form = document.getElementById("name-form");
+        const spinner = document.getElementById("spinner");
+        const result = document.getElementById("result");
+        const llmResponseContainer = document.getElementById("llm-response-container");
+        const llmResponse = document.getElementById("llm-response");
+
+        form.addEventListener("submit", (ev) => {
+            ev.preventDefault();
+
+            result.style.display = "none";
+            llmResponseContainer.style.display = "";
+            spinner.style.display = "";
+            llmResponse.innerHTML = "";
+
+            const formData = new FormData(form);
+
+            fetch("/process", { method: "POST", body: formData })
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error("POST request failed");
+                })
+                .then(data => {
+                    document.getElementById("profile-pic").src = data.picture_url;
+                    document.getElementById("summary").textContent = data.summary_and_questions.summary;
+                    createHtmlList(document.getElementById("questions"), data.summary_and_questions.questions);
+
+                    spinner.style.display = "none";
+                    result.style.display = "";
+                })
+        });
+
+        function createHtmlList(element, items) {
+            const ul = document.createElement("ul");
+
+            items.forEach(item => {
+                const li = document.createElement("li");
+                li.textContent = item;
+                ul.appendChild(li);
+            })
+
+            element.innerHTML = "";
+            element.appendChild(ul);
+        }
+        const socket = io();
+        socket.on('connect', () => {
+            console.log('WebSocket connected');  
+        });
+        socket.on('llm_response', function (data) {
+            console.log('Received LLM Response:', data.response);
+            const element = document.getElementById("llm-response");
+
+            // Create new message element with fade-in effect
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'llm-message fade-in';
+            messageDiv.textContent = data.response;
+
+            // Append new message
+            element.appendChild(messageDiv);
+        });
+        socket.on('disconnect', () => {
+            console.log('WebSocket disconnected');  
+        });
+
+    </script>
+</body>
+
+</html>
